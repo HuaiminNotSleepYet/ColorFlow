@@ -186,11 +186,13 @@ func _load_levels():
     _level_selector.clear()
     _level_list.clear()
     
-    var load_level = func(level_data: Dictionary): 
+    var load_level = func(level_data: Array[String]): 
+        if level_data.size() < 4:
+            return
         var level = {
-                "name": level_data.get("name", ""),
-                "author": level_data.get("author", ""),
-                "level": "\n".join(level_data.get("level", ""))
+                "author": level_data.get(0),
+                "name": level_data.get(1),
+                "level": "\n".join(level_data.slice(2))
         }
         if level["name"].is_empty() or level["author"].is_empty() or level["level"].is_empty():
             return
@@ -204,6 +206,14 @@ func _load_levels():
         var f = FileAccess.open("./levels/" + file, FileAccess.READ)
         if f == null:
             continue
-        for level_data in JSON.parse_string(f.get_as_text()):
-            load_level.call(level_data)
+        var lines = f.get_as_text(true).split('\n')
         f.close()
+        var level_data: Array[String] = []
+        for line in lines:
+            if line.is_empty():
+                load_level.call(level_data)
+                level_data.clear()
+                continue
+            level_data.push_back(line)
+        if not level_data.is_empty():
+            load_level.call(level_data)
